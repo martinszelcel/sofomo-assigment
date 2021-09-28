@@ -20,6 +20,7 @@ services:
       - sofomo-assigment-network
   mongo:
     image: mongo
+    container_name: sofomo-assigment-database
     volumes:
       - 'data-volume:/data/db'
     ports:
