@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile
     image: sofomo-assigment-backend
     container_name: sofomo-assigment-backend
-    command: yarn start
+    command: yarn dev
     volumes:
       - './:/usr/src/app'
       - /usr/src/app/node_modules
