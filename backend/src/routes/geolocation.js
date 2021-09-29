@@ -3,12 +3,11 @@ const axios = require("axios");
 const Geolocation = require('../models/GeolocationModel');
 const logger = require('../utils/logger');
 const resolveAddress = require('../services/resolveAdress');
+const auth = require('../middleware/auth');
 
 const router = express.Router();
 
-const apiKey = process.env.IPSTACK_API_KEY
-
-router.get('/', async (req, res) => {
+router.get('/', auth.required, async (req, res) => {
     try {
         const result = await Geolocation.find();
         res.json(result);
@@ -21,7 +20,7 @@ router.get('/', async (req, res) => {
     }
 })
 
-router.get('/:address', async (req, res) => {
+router.get('/:address', auth.required, async (req, res) => {
     const address = req.params.address;
 
     try {
@@ -43,7 +42,7 @@ router.get('/:address', async (req, res) => {
         // If no data in database, get data from API
         logger.debug(`Using data from ipstack.com API for adress ${ip}`)
 
-        axios.get(`http://api.ipstack.com/${ip}?access_key=${apiKey}`)
+        axios.get(`http://api.ipstack.com/${ip}?access_key=${process.env.IPSTACK_API_KEY}`)
             .then(async (response) => {
                 if (!response.data.error) {
                     // Create data object
@@ -90,7 +89,7 @@ router.get('/:address', async (req, res) => {
     }
 });
 
-router.put('/:address', async (req, res) => {
+router.put('/:address', auth.required, async (req, res) => {
     const address = req.params.address;
     const geolocationData = req.body;
 
@@ -130,7 +129,7 @@ router.put('/:address', async (req, res) => {
     }
 });
 
-router.post('/:address', async (req, res) => {
+router.post('/:address', auth.required, async (req, res) => {
     const address = req.params.address;
     const geolocationData = req.body;
 
@@ -171,7 +170,7 @@ router.post('/:address', async (req, res) => {
     }
 });
 
-router.delete('/:address', async (req, res) => {
+router.delete('/:address', auth.required, async (req, res) => {
     const address = req.params.address;
 
     try {

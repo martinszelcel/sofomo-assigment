@@ -1,5 +1,4 @@
 const winston = require("winston");
-const morgan = require("morgan");
 
 const format = winston.format.printf(({ level, message, label, timestamp }) => {
     return `${timestamp} [${level}] ${message}`;

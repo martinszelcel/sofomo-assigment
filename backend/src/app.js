@@ -1,16 +1,20 @@
 const express = require("express");
 const mongoose = require("mongoose");
 
-// Load variables from .env file
-require("dotenv").config();
-
 const logger = require("./utils/logger");
 const morganLogger = require("./utils/morganLogger");
 
 const geolocation = require("./routes/geolocation");
+const auth = require("./routes/auth");
 
 const app = express();
 const port = 5000;
+
+// Check if ipstack.com API key is provided
+if (!process.env.IPSTACK_API_KEY) {
+    logger.error("ipstack.com API key is missing, please provide it in IPSTACK_API_KEY enviroment variable")
+    process.exit();
+}
 
 mongoose.connect('mongodb://mongo:27017/app', {useNewUrlParser: true})
     .then(() => logger.info("Connected to MongoDB database"))
@@ -33,6 +37,7 @@ app.listen(port, () => {
 app.use(morganLogger);
 
 app.use('/geolocation', geolocation)
+app.use('/auth', auth);
 
 app.use((req, res, next) => {
     res.status(404).json({
