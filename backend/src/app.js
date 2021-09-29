@@ -36,8 +36,8 @@ app.listen(port, () => {
 
 app.use(morganLogger);
 
-app.use('/geolocation', geolocation)
-app.use('/auth', auth);
+app.use('/api/geolocation', geolocation)
+app.use('/api/auth', auth);
 
 app.use((req, res, next) => {
     res.status(404).json({
