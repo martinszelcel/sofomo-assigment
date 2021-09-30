@@ -2,10 +2,9 @@ import React, { useContext } from "react";
 import { useFormik } from 'formik';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
-import api from "../services/api";
-import { UserContext } from "../contexts/UserContext";
+import { UserContext } from "../../contexts/UserContext";
 
-export default function AddressInput({refreshGeolocationsList}) {
+export default function AddressInput({getGeolocation}) {
     const userContext = useContext(UserContext);
 
     const formik = useFormik({
@@ -13,14 +12,7 @@ export default function AddressInput({refreshGeolocationsList}) {
             address: ''
         },
         onSubmit: ({address}) => {
-            api.get(`/geolocation/${encodeURIComponent(address)}`)
-            .then(response => {
-                console.log(response);
-                refreshGeolocationsList();
-            })
-            .catch(error => {
-                console.log(error);
-            })
+            getGeolocation(address);
         }
     })
 

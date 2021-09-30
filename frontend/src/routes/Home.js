@@ -4,7 +4,7 @@ import SiteTitle from '../components/SiteTitle';
 
 import { UserContext } from '../contexts/UserContext';
 import Button from '../components/Button';
-import GeolocationFinder from '../components/GeolocationFinder';
+import GeolocationFinder from '../components/geolocation/GeolocationFinder';
 
 export default function Home() {
     const userContext = useContext(UserContext); 

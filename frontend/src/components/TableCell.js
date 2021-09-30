@@ -1,11 +1,9 @@
 import React from 'react';
 
-export default function TableCell({ tag, children }) {
-    const Tag = tag ? tag : "td";
-
+export default function TableCell({ children, className }) {
     return (
-        <Tag className="border border-indigo-500 px-4 py-2">
+        <td className={`border border-indigo-500 px-4 py-2 ${className}`}>
             {children}
-        </Tag>
+        </td>
     )
 }
