@@ -1,4 +1,5 @@
 const logger = require("../utils/logger");
+const axios = require("axios");
 
 function getGeolocationData(ip) {
     return new Promise((resolve, reject) => {

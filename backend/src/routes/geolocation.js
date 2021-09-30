@@ -32,31 +32,36 @@ router.get('/:address', auth.required, (req, res) => {
                 logger.debug(`Using data from database for adress ${ip}`)
                 res.json(result);
                 return;
+            } else {
+                // If no data in database, get data from API
+                logger.debug(`Using data from ipstack.com API for adress ${ip}`);
+
+                ipStackApiService.getGeolocationData(ip).then(geolocationData => {
+
+                    // Save data in db
+                    const geolocation = new Geolocation(geolocationData);
+                    
+                    geolocation.save().then(savedGeolocation => {
+                        res.json(savedGeolocation);
+                    }).catch(error => {
+                        logger.error("Error while connecting to MongoDB database, data will be not saved");
+                        res.json(geolocationData);
+                    });
+
+                }).catch(error => {
+                    logger.error(error);
+                    res.status(500).json({
+                        type: "error",
+                        message: "Error with ipstack.com API, please try again later"
+                    });
+                });
             }
         })
         .catch(error => {
-            logger.error("Error while connecting to MongoDB database, ipstack.com API will be used instead");
-        });
-
-        // If no data in database, get data from API
-        logger.debug(`Using data from ipstack.com API for adress ${ip}`);
-
-        ipStackApiService.getGeolocationData(ip).then(geolocationData => {
-
-            // Save data in db
-            const geolocation = new Geolocation(geolocationData);
-             
-            geolocation.save().then(savedGeolocation => {
-                res.json(savedGeolocation);
-            }).catch(error => {
-                logger.error("Error while connecting to MongoDB database, data will be not saved");
-                res.json(geolocationData);
-            });
-
-        }).catch(error => {
+            logger.error("Error while connecting to MongoDB database");
             res.status(500).json({
                 type: "error",
-                message: "Error with ipstack.com API, please try again later"
+                message: "Error with connection to database, please try again later"
             });
         });
 
@@ -83,8 +88,9 @@ router.put('/:address', auth.required, (req, res) => {
         // Find and replace object data in db
         Geolocation.findOne({ip}).then(result => {
             if (result) {
+                
                 // If object exists update and save
-                result.geolocationData = geolocationData;
+                result.set(geolocationData);
 
                 result.save().then(savedGeolocation => {
                     res.json(savedGeolocation);
