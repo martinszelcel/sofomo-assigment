@@ -45,10 +45,18 @@ router.get('/:address', auth.required, async (req, res) => {
         axios.get(`http://api.ipstack.com/${ip}?access_key=${process.env.IPSTACK_API_KEY}`)
             .then(async (response) => {
                 if (!response.data.error) {
+
                     // Create data object
                     const geolocationData = {
                         ip: ip,
-                        geolocationData: response.data
+                        city: response.data.city,
+                        continent: response.data.continent_name,
+                        country: response.data.country_name,
+                        region: response.data.region_name,
+                        zip: response.data.zip,
+                        callingCode: response.data.location.calling_code,
+                        capital: response.data.location.capital,
+                        countryFlag: response.data.location.country_flag_emoji,
                     };
         
                     // Save data in db

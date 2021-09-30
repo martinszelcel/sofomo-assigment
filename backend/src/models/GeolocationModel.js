@@ -3,7 +3,14 @@ const { Schema } = mongoose;
 
 const GeolocationSchema = new Schema({
     ip: { type: String, required: true, unique: true },
-    geolocationData: { type: Object },
+    city: { type: String },
+    continent: { type: String },
+    country: { type: String },
+    region: { type: String },
+    zip: { type: String },
+    callingCode: { type: String },
+    capital: { type: String },
+    countryFlag: { type: String },
 }, {
     timestamps: true
 });
