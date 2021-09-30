@@ -3,14 +3,14 @@ import "tailwindcss/tailwind.css"
 import {BrowserRouter as Router, Switch, Route} from 'react-router-dom';
 
 import Home from './routes/Home';
-import StorageContextProvider from './contexts/StorageContext';
+import UserContextProvider from './contexts/UserContext';
 import LoginModal from './components/modals/LoginModal';
 import RegisterModal from './components/modals/RegisterModal';
 
 const App = () => {
     return (
         <Router>
-            <StorageContextProvider>
+            <UserContextProvider>
                 <div className="bg-indigo-900 text-gray-100 min-h-screen p-4 relative">
                     <Home />
 
@@ -24,7 +24,7 @@ const App = () => {
                     </Switch>
                 
                 </div>
-            </StorageContextProvider>
+            </UserContextProvider>
         </Router>
     );
 }

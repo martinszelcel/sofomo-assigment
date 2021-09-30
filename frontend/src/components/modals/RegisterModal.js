@@ -3,12 +3,13 @@ import Modal from '../Modal';
 import Button from '../Button';
 import FormField from '../FormField';
 import { useFormik } from 'formik';
-import axios from 'axios';
-import { StorageContext } from '../../contexts/StorageContext';
+import { UserContext } from '../../contexts/UserContext';
 import { useHistory } from 'react-router';
+import api from '../../services/api';
+import tokenService from '../../services/tokenService';
 
 const RegisterModal = () => {
-	const storageContext = useContext(StorageContext);
+	const userContext = useContext(UserContext);
 	const history = useHistory();
 
 	const formik = useFormik({
@@ -20,14 +21,16 @@ const RegisterModal = () => {
 		onSubmit: ({email, password, confirmPassword}) => {
 			if (password != confirmPassword) return;
 
-			axios.post('/api/auth/register', {
+			api.post('/auth/register', {
 				email, 
 				password
 			})
 			.then((response) => {
-				console.log(storageContext);
 				const {accessToken, refreshToken} = response.data;
-				storageContext.setTokens(accessToken, refreshToken);
+				tokenService.setTokens(accessToken, refreshToken);
+				userContext.setLoggedIn(true);
+				userContext.setEmail(email);
+
 				history.push('/')
 			})
 			.catch(error => {

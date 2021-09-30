@@ -3,12 +3,13 @@ import Modal from '../Modal';
 import Button from '../Button';
 import FormField from '../FormField';
 import { useFormik } from 'formik';
-import { StorageContext } from '../../contexts/StorageContext';
+import { UserContext } from '../../contexts/UserContext';
 import api from '../../services/api';
 import { useHistory } from 'react-router';
+import tokenService from '../../services/tokenService';
 
 export default function LoginModal() {
-	const storageContext = useContext(StorageContext);
+	const userContext = useContext(UserContext);
 	const history = useHistory();
 
     const formik = useFormik({
@@ -20,7 +21,10 @@ export default function LoginModal() {
 			api.post('/auth/login', {email, password})
 			.then(response => {
 				const {accessToken, refreshToken} = response.data;
-				storageContext.setTokens(accessToken, refreshToken);
+				tokenService.setTokens(accessToken, refreshToken);
+				userContext.setLoggedIn(true);
+				userContext.setEmail(email);
+
 				history.push('/');
 			})
 			.catch(error => {

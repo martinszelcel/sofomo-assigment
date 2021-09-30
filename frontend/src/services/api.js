@@ -1,5 +1,6 @@
 import axios from "axios";
 import jwtDecode from "jwt-decode";
+import tokenService from "./tokenService";
 
 const api = axios.create({
     baseURL: '/api'
@@ -8,7 +9,7 @@ const api = axios.create({
 // Before sending any request
 api.interceptors.request.use(async (config) => {
     // Get and decode access token
-    const accessToken = sessionStorage.getItem('accessToken');
+    let accessToken = tokenService.getAccessToken();
     let tokenExpirationTime = 0;
 
     if (accessToken) {
@@ -20,19 +21,16 @@ api.interceptors.request.use(async (config) => {
     
     // If token is expired or expires in less than 10 seconds, refresh it
     if (tokenExpirationTime < 10 && config.url != '/auth/refreshToken') {
-        const refreshToken = localStorage.getItem('refreshToken')
+        let refreshToken = tokenService.getRefreshToken();
         if (!refreshToken) return config;
 
         try {
-            const response = await api.post('/auth/refreshToken', {
-                refreshToken: refreshToken
-            });
+            const response = await api.post('/auth/refreshToken', {refreshToken});
     
             accessToken = response.data.accessToken;
             refreshToken = response.data.refreshToken;
     
-            sessionStorage.setItem('accessToken', accessToken);
-            localStorage.setItem('refreshToken', refreshToken);
+            tokenService.setTokens(accessToken, refreshToken);
         } catch (error) {
             console.log("Error refreshing token", error);
         }

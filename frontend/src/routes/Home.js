@@ -1,23 +1,33 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import NavLinkButton from '../components/NavLinkButton';
-import AddressInput from '../components/AddressInput';
 import SiteTitle from '../components/SiteTitle';
-import AddressTable from '../components/AddressTable';
+
+import { UserContext } from '../contexts/UserContext';
+import Button from '../components/Button';
+import GeolocationFinder from '../components/GeolocationFinder';
 
 export default function Home() {
+    const userContext = useContext(UserContext); 
+
     return (
         <>
-            <div className="relative right-4 top-4 text-right z-10 flex flex-row-reverse gap-2">
-                <NavLinkButton to="/login">Login</NavLinkButton>
-                <NavLinkButton to="/register">Register</NavLinkButton>
+            <div className="relative right-4 top-4 text-right z-10 flex justify-end items-center gap-4">
+                { userContext.isLoggedIn ? (
+                    <>
+                        <div className="text-indigo-300">{userContext.email}</div>
+                        <Button to="/logout" onClick={userContext.logout}>Logout</Button>
+                    </>
+                ) : (
+                    <>
+                        <NavLinkButton to="/login">Login</NavLinkButton>
+                        <NavLinkButton to="/register">Register</NavLinkButton>
+                    </>
+                )}
             </div>
 
             <div className="mt-16 text-center flex flex-col items-center">
                 <SiteTitle />
-                <AddressInput />
-                <AddressTable />
-
-                Add
+                <GeolocationFinder />
             </div>
         </>
     );
