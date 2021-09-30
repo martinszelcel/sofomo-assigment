@@ -10,44 +10,45 @@ export default class GeolocationFinder extends React.Component {
     state = {
         geolocations: [],
         geolocation: null,
-        editMode: false
-    }
-
-    componentDidMount() {
-        this.getGeolocationsList();
+        editMode: false,
+        inputErrorMessage: null,
+        tableErrorMessage: null
     }
 
     getGeolocationsList = () => {
-        geolocationService.getGeolocations()
-        .then(geolocations => {
+        geolocationService.getGeolocations().then(geolocations => {
             this.setState({geolocations});
-        })
-        .catch(error => {
+        }).catch(error => {
             console.log(error);
+            this.setState({
+                tableErrorMessage: error.response.data.message
+            })
         })
     }
 
     getGeolocation = (address) => {
-        geolocationService.getGeolocation(address)
-        .then(geolocation => {
+        geolocationService.getGeolocation(address).then(geolocation => {
             this.setState({
                 geolocation,
+                inputErrorMessage: null
             });
             this.getGeolocationsList();
+        }).catch(error => {
+            this.setState({
+                inputErrorMessage: error.response.data.message
+            })
         })
     }
 
     removeGeolocation = (address) => {
-        geolocationService.removeGeolocation(address)
-        .then(response => {
+        geolocationService.removeGeolocation(address).then(response => {
             console.log(response);
             this.setState({
                 geolocation: null,
                 editMode: false,
             })
             this.getGeolocationsList();
-        })
-        .catch(error => {
+        }).catch(error => {
             console.log(error);
         })
     }
@@ -75,11 +76,12 @@ export default class GeolocationFinder extends React.Component {
     }
 
     render() {
-        const { geolocation, geolocations, editMode } = this.state;
+        const { geolocation, geolocations, editMode, inputErrorMessage, tableErrorMessage } = this.state;
 
         return (
             <>
                 <AddressInput refreshGeolocationsList={this.refreshGeolocationsList} getGeolocation={this.getGeolocation} />
+                {inputErrorMessage}
 
                 <UserContext.Consumer>
                     {({isLoggedIn}) =>
@@ -89,7 +91,13 @@ export default class GeolocationFinder extends React.Component {
                                     editMode ? <GeolocationEdit geolocation={geolocation} removeGeolocation={this.removeGeolocation} updateGeolocation={this.updateGeolocation} />
                                     : <GeolocationDetails geolocation={geolocation} removeGeolocation={this.removeGeolocation} editGeolocation={this.editGeolocation} /> 
                                     : null}
-                                <GeolocationTable geolocations={geolocations} removeGeolocation={this.removeGeolocation} editGeolocation={this.editGeolocation} />
+                                {isLoggedIn ? (
+                                    <GeolocationTable geolocations={geolocations} getGeolocationsList={this.getGeolocationsList} removeGeolocation={this.removeGeolocation} editGeolocation={this.editGeolocation} />
+                                ) : tableErrorMessage ? (
+                                    <div className="text-xl font-bold mt-10">
+                                        {tableErrorMessage}
+                                    </div>
+                                ) : null}
                             </>
                         ) : null
                     }

@@ -10,6 +10,10 @@ export default class GeolocationTable extends React.Component {
         page: 1
     }
 
+    componentDidMount() {
+        this.props.getGeolocationsList();
+    }
+
     sortBy = (property) => {
         this.setState({
             sortingBy: property,

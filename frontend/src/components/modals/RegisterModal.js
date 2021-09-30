@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import Modal from '../Modal';
 import Button from '../Button';
 import FormField from '../FormField';
@@ -11,6 +11,7 @@ import tokenService from '../../services/tokenService';
 const RegisterModal = () => {
 	const userContext = useContext(UserContext);
 	const history = useHistory();
+	const [errorMessage, setErrorMessage] = useState();
 
 	const formik = useFormik({
 		initialValues: {
@@ -19,7 +20,10 @@ const RegisterModal = () => {
 			confirmPassword: ''
 		},
 		onSubmit: ({email, password, confirmPassword}) => {
-			if (password != confirmPassword) return;
+			if (password != confirmPassword) {
+				setErrorMessage("Passwords don't match");
+				return;
+			}
 
 			api.post('/auth/register', {
 				email, 
@@ -35,6 +39,7 @@ const RegisterModal = () => {
 			})
 			.catch(error => {
 				console.log(error);
+				setErrorMessage(error.response.data.message);
 			});
 		}
 	});
@@ -51,6 +56,9 @@ const RegisterModal = () => {
 							<FormField id="email" name="Email" type="email" onChange={formik.handleChange} value={formik.values.email}/>
 							<FormField id="password" name="Password" type="password" onChange={formik.handleChange} value={formik.values.password}/>
 							<FormField id="confirmPassword" name="Confirm password" type="password" onChange={formik.handleChange} value={formik.values.confirmPassword}/>
+						</div>
+						<div>
+							{errorMessage}
 						</div>
 					</div>
 				</div>
