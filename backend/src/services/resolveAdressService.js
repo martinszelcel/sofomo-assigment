@@ -34,4 +34,7 @@ async function resolveAddress(address) {
     });
 }
 
-module.exports = resolveAddress;
+module.exports = {
+    dnsLookup,
+    resolveAddress
+};

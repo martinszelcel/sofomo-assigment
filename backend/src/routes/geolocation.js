@@ -2,219 +2,218 @@ const express = require('express');
 const axios = require("axios");
 const Geolocation = require('../models/GeolocationModel');
 const logger = require('../utils/logger');
-const resolveAddress = require('../services/resolveAdress');
+const { resolveAddress } = require('../services/resolveAdressService');
 const auth = require('../middleware/auth');
+const ipStackApiService = require('../services/ipStackApiService');
 
 const router = express.Router();
 
-router.get('/', auth.required, async (req, res) => {
-    try {
-        const result = await Geolocation.find();
+router.get('/', auth.required, (req, res) => {
+    Geolocation.find().then(result => {
         res.json(result);
-    } catch (error) {
+    }).catch(error => {
         logger.error(`Error while connecting to MongoDB database\n${error.stack}`);
         res.status(500).json({
             type: "error",
             message: "Error with connection to database, please try again later"
         });
-    }
-})
+    });
+});
 
-router.get('/:address', auth.required, async (req, res) => {
+router.get('/:address', auth.required, (req, res) => {
     const address = req.params.address;
 
-    try {
-        // Resolve url address to ip adress
-        const ip = await resolveAddress(address);
+    // Resolve url address to ip adress
+    resolveAddress(address).then(ip => {
 
         // Check if data exist in database
-        try {
-            const result = await Geolocation.findOne({ip});
+        Geolocation.findOne({ip}).then(result => {
             if (result) {
                 logger.debug(`Using data from database for adress ${ip}`)
                 res.json(result);
                 return;
             }
-        } catch (error) {
+        })
+        .catch(error => {
             logger.error("Error while connecting to MongoDB database, ipstack.com API will be used instead");
-        }
+        });
 
         // If no data in database, get data from API
-        logger.debug(`Using data from ipstack.com API for adress ${ip}`)
+        logger.debug(`Using data from ipstack.com API for adress ${ip}`);
 
-        axios.get(`http://api.ipstack.com/${ip}?access_key=${process.env.IPSTACK_API_KEY}`)
-            .then(async (response) => {
-                if (!response.data.error) {
+        ipStackApiService.getGeolocationData(ip).then(geolocationData => {
 
-                    // Create data object
-                    const geolocationData = {
-                        ip: ip,
-                        city: response.data.city,
-                        continent: response.data.continent_name,
-                        country: response.data.country_name,
-                        region: response.data.region_name,
-                        zip: response.data.zip,
-                        callingCode: response.data.location.calling_code,
-                        capital: response.data.location.capital,
-                        countryFlag: response.data.location.country_flag_emoji,
-                    };
-        
-                    // Save data in db
-                    try {
-                        await new Geolocation(geolocationData).save();
-                    } catch (error) {
-                        logger.error("Error while connecting to MongoDB database, data will be not saved");
-                    }
-        
-                    // Send data to client
-                    res.json(geolocationData);
-
-                } else {
-                    logger.error(`Error from ipstack.com API: ${response.data.error.info}`);
-                    res.status(500).json({
-                        type: "error",
-                        message: "Error with ipstack.com API, please try again later"
-                    });
-                }
-            
-            })
-            .catch(() => {
-                const message = "Error connecting to ipstack.com API, please try again later"
-
-                logger.error(message)
-                res.status(500).json({
-                    type: "error",
-                    message: message
-                });
+            // Save data in db
+            const geolocation = new Geolocation(geolocationData);
+             
+            geolocation.save().then(savedGeolocation => {
+                res.json(savedGeolocation);
+            }).catch(error => {
+                logger.error("Error while connecting to MongoDB database, data will be not saved");
+                res.json(geolocationData);
             });
 
-    } catch (error) {
-        logger.error("Error while resolving ip address");
-        res.status(422).json({
-            type: "info",
-            message: "Please provide a vaild address"
-        })
-    }
-});
+        }).catch(error => {
+            res.status(500).json({
+                type: "error",
+                message: "Error with ipstack.com API, please try again later"
+            });
+        });
 
-router.put('/:address', auth.required, async (req, res) => {
-    const address = req.params.address;
-    const geolocationData = req.body;
-
-    try {
-        // Resolve url address to ip adress
-        const ip = await resolveAddress(address);
-
-        // Find and replace object data in db
-        try {
-            const result = await Geolocation.findOne({ip});
-            if (result) {
-                result.geolocationData = geolocationData;
-                await result.save();
-                res.json(result);
-
-            } else {
-                try {
-                    const geolocation = await new Geolocation({
-                        ip,
-                        geolocationData
-                    }).save();
-                    res.json(geolocation);
-
-                } catch (error) {
-                    logger.error("Error while connecting to MongoDB database, data will be not saved");
-                }
-            }
-        } catch (error) {
-            logger.error("Error while connecting to MongoDB database.");
-        }
-    } catch (error) {
+    })
+    .catch(error => {
         logger.error("Error while resolving ip address");
         res.status(422).json({
             type: "info",
             message: "Please provide a vaild address"
         });
-    }
+    });
 });
 
-router.post('/:address', auth.required, async (req, res) => {
+router.put('/:address', auth.required, (req, res) => {
     const address = req.params.address;
     const geolocationData = req.body;
 
-    try {
-        // Resolve url address to ip adress
-        const ip = await resolveAddress(address);
+    // Resolve url address to ip adress
+    resolveAddress(address).then(ip => {
 
-        // Create object in database if already doesn't exists
-        try {
-            const result = await Geolocation.findOne({ip});
-            if (!result) {
-                try {
-                    const geolocation = await new Geolocation({
-                        ip,
-                        geolocationData
-                    }).save();
-                    res.json(geolocation);
+        // Make sure the same ip is set in geolocation data
+        geolocationData.ip = ip;
 
-                } catch (error) {
-                    logger.error("Error while connecting to MongoDB database, data will be not saved");
-                }
+        // Find and replace object data in db
+        Geolocation.findOne({ip}).then(result => {
+            if (result) {
+                // If object exists update and save
+                result.geolocationData = geolocationData;
+
+                result.save().then(savedGeolocation => {
+                    res.json(savedGeolocation);
+                }).catch(error => {
+                    logger.error(error);
+                    res.status(500).json({
+                        type: "error",
+                        message: "Error while connecting to MongoDB database, please try again later"
+                    });
+                });
+
             } else {
+                // If object doesn't exist create new and save
+                const newGeolocation = new Geolocation(geolocationData);
+
+                newGeolocation.save().then(savedGeolocation => {
+                    res.json(savedGeolocation);
+                }).catch(error => {
+                    logger.error(error);
+                    res.status(500).json({
+                        type: "error",
+                        message: "Error while connecting to MongoDB database, please try again later"
+                    });
+                });
+            }
+            
+        });
+
+    }).catch(error => {
+        logger.error("Error while resolving ip address");
+        res.status(422).json({
+            type: "info",
+            message: "Please provide a vaild address"
+        });
+    })
+});
+
+router.post('/:address', auth.required, (req, res) => {
+    const address = req.params.address;
+    const geolocationData = req.body;
+
+    // Resolve url address to ip adress
+    resolveAddress(address).then(ip => {
+
+        // Make sure the same ip is set in geolocation data
+        geolocationData.ip = ip;
+
+        // Check if object with this ip doesn't already exist
+        Geolocation.findOne({ip}).then(result => {
+            if (result) {
                 res.status(409).json({
                     type: "info",
                     message: "Object with this IP adress already exist in database",
                     data: result.geolocationData
                 });
+            } else {
+                // Object doesn't exist, create new one and save
+                const geolocation = new Geolocation(geolocationData);
+                
+                geolocation.save().then(savedGeolocation => {
+                    res.json(savedGeolocation);
+                }).catch(error => {
+                    logger.error(error);
+                    res.status(500).json({
+                        type: "error",
+                        message: "Error while connecting to MongoDB database, please try again later"
+                    });
+                });
             }
-        } catch (error) {
-            logger.error("Error while connecting to MongoDB database.");
-        }
-    } catch (error) {
+        }).catch(error => {
+            logger.error(error);
+            res.status(500).json({
+                type: "error",
+                message: "Error while connecting to MongoDB database, please try again later"
+            });
+        });
+    }).catch(error => {
         logger.error("Error while resolving ip address");
         res.status(422).json({
             type: "info",
             message: "Please provide a vaild address"
         });
-    }
+    });
 });
 
 router.delete('/:address', auth.required, async (req, res) => {
     const address = req.params.address;
 
-    try {
-        // Resolve url address to ip adress
-        const ip = await resolveAddress(address);
+    // Resolve url address to ip adress
+    resolveAddress(address).then(ip => {
+        // Find and remove object from db
+        Geolocation.findOne({ip}).then(result => {
 
-        // Find and remove object in db
-        try {
-            const result = await Geolocation.findOne({ip});
             if (result) {
-                try {
-                    await Geolocation.deleteOne({ip})
+                Geolocation.deleteOne({ip}).then(() => {
                     res.json({
                         type: "info",
                         message: "Object with this IP was successfully removed",
                     });
+                }).catch(error => {
+                    logger.error(error);
+                    res.status(500).json({
+                        type: "error",
+                        message: "Error while connecting to MongoDB database, please try again later"
+                    });
+                });
 
-                } catch (error) {
-                    logger.error("Error while connecting to MongoDB database, data will be not saved");
-                }
             } else {
                 res.status(404).json({
                     type: "info",
                     message: "Object with this IP adress doesn't exist",
                 });
             }
-        } catch (error) {
-            logger.error("Error while connecting to MongoDB database.");
-        }
-    } catch (error) {
+
+        }).catch(error => {
+            logger.error(error);
+            res.status(500).json({
+                type: "error",
+                message: "Error while connecting to MongoDB database, please try again later"
+            });
+        });
+
+    }).catch(error => {
         logger.error("Error while resolving ip address");
         res.status(422).json({
             type: "info",
             message: "Please provide a vaild address"
         });
-    }
-})
+    });
+});
 
 module.exports = router;
