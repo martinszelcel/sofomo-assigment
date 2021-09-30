@@ -20,7 +20,7 @@ router.get('/', auth.required, (req, res) => {
     });
 });
 
-router.get('/:address', auth.required, (req, res) => {
+router.get('/:address(*)', auth.required, (req, res) => {
     const address = req.params.address;
 
     // Resolve url address to ip adress
@@ -75,7 +75,7 @@ router.get('/:address', auth.required, (req, res) => {
     });
 });
 
-router.put('/:address', auth.required, (req, res) => {
+router.put('/:address(*)', auth.required, (req, res) => {
     const address = req.params.address;
     const geolocationData = req.body;
 
@@ -128,7 +128,7 @@ router.put('/:address', auth.required, (req, res) => {
     })
 });
 
-router.post('/:address', auth.required, (req, res) => {
+router.post('/:address(*)', auth.required, (req, res) => {
     const address = req.params.address;
     const geolocationData = req.body;
 
@@ -176,7 +176,7 @@ router.post('/:address', auth.required, (req, res) => {
     });
 });
 
-router.delete('/:address', auth.required, async (req, res) => {
+router.delete('/:address(*)', auth.required, async (req, res) => {
     const address = req.params.address;
 
     // Resolve url address to ip adress
